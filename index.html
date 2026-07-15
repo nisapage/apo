@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Lensa Achromatic & Apochromatic</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --panel: #161b22;
+            --text: #ecf0f1;
+            --accent: #58a6ff;
+            --red: #ff7b72;
+            --green: #2ecc71;
+            --blue: #38bdf8;
+            --yellow: #f1c40f;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 20px; display: flex;
+            flex-direction: column; align-items: center;
+        }
+        .container { max-width: 900px; width: 100%; }
+        h1 { text-align: center; color: var(--accent); margin-top: 0; font-size: 24px; }
+        
+        /* Tombol Mode */
+        .mode-buttons {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .btn-mode {
+            background: #21262d; border: 2px solid #30363d; color: #8b949e;
+            padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            transition: 0.3s; font-size: 14px; text-align: center;
+        }
+        .btn-mode:hover { border-color: var(--accent); color: #fff; }
+        .btn-mode.active {
+            background: #1f293d; border-color: var(--accent); color: #fff;
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
+        }
+
+        /* Kanvas */
+        .canvas-box {
+            position: relative; width: 100%; height: 350px;
+            background: radial-gradient(circle at center, #1a253a 0%, #05080f 100%);
+            border: 1px solid #30363d; border-radius: 12px; overflow: hidden;
+            margin-bottom: 20px; box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+        
+        /* Box Penjelasan */
+        .desc-box {
+            background: var(--panel); padding: 20px; border-radius: 12px;
+            border-left: 5px solid var(--accent); border: 1px solid #30363d;
+            border-left-width: 5px;
+        }
+        .desc-box h2 { margin-top: 0; color: var(--yellow); font-size: 18px; }
+        .desc-box p { line-height: 1.6; color: #c9d1d9; font-size: 14px; margin-bottom: 0; }
+        .tag {
+            display: inline-block; background: #30363d; color: var(--yellow);
+            padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔬 Keajaiban Optik: Mengatasi Aberasi Kromatik</h1>
+
+    <!-- 3 Pilihan Desain -->
+    <div class="mode-buttons">
+        <button class="btn-mode active" onclick="setMode('singlet')" id="btn-singlet">1. Lensa Tunggal<br><span style="font-size:11px; font-weight:normal;">(Aberasi Parah - 3 Warna Pisah)</span></button>
+        <button class="btn-mode" onclick="setMode('achromat')" id="btn-achromat">2. Achromatic Doublet<br><span style="font-size:11px; font-weight:normal;">(Crown + Flint - 2 Warna Menyatu)</span></button>
+        <button class="btn-mode" onclick="setMode('apochromat')" id="btn-apochromat">3. Apochromatic (APO)<br><span style="font-size:11px; font-weight:normal;">(ED Triplet Glass - 3 Warna Menyatu!)</span></button>
+    </div>
+
+    <!-- Kanvas Visual -->
+    <div class="canvas-box">
+        <canvas id="lensCanvas" width="850" height="350"></canvas>
+    </div>
+
+    <!-- Penjelasan Dinamis -->
+    <div class="desc-box" id="desc-content"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('lensCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let mode = 'singlet';
+    let photons = [];
+
+    const descData = {
+        singlet: {
+            title: "1. Lensa Tunggal (Singlet - Tanpa Koreksi)",
+            tag: "Aberasi Kromatik Parah",
+            color: "var(--red)",
+            text: "Satu lensa kaca biasa bertindak layaknya prisma! Perhatikan bagaimana cahaya <b>Biru</b> dibengkokkan paling tajam dan jatuh jauh di depan, sedangkan cahaya <b>Merah</b> jatuh di paling belakang. Karena ketiga warna dasar tidak bertemu di satu titik fokus, saat kamu melihat objek terang seperti Bulan, akan muncul bayangan warna ungu dan merah yang mengganggu di pinggirannya."
+        },
+        achromat: {
+            title: "2. Lensa Achromatic Doublet (Crown + Flint Glass)",
+            tag: "Standar Teleskop Hobiis",
+            color: "var(--accent)",
+            text: "Dengan menggabungkan <b>Lensa Cembung (Kaca Crown)</b> dan <b>Lensa Cekung (Kaca Flint)</b> di belakangnya, sifat pembiasan yang berlawanan saling membatalkan! Desain ini berhasil menarik fokus cahaya <b>Merah dan Biru untuk menyatu tepat di satu titik!</b> Meski cahaya Hijau/Kuning masih sedikit meleset (Secondary Spectrum), kualitas gambar sudah jauh lebih tajam dan bersih."
+        },
+        apochromat: {
+            title: "3. Lensa Apochromatic Triplet (ED / Fluorite Glass)",
+            tag: "Kualitas Sempurna (The Holy Grail)",
+            color: "var(--green)",
+            text: "Ini adalah teknologi optik tertinggi! Menggunakan kombinasi <b>3 Lensa (Triplet)</b> di mana lensa tengahnya terbuat dari kaca eksotis <b>ED (Extra-low Dispersion)</b> atau kristal mineral <i>Fluorite</i>. Bahan super mahal ini memiliki daya sebar warna yang hampir nol, sehingga berhasil <b>menyatukan ketiga warna (Merah, Hijau, dan Biru) ke tepat SATU titik fokus sempurna!</b> Hasilnya 100% bebas bayangan warna!"
+        }
+    };
+
+    function setMode(newMode) {
+        mode = newMode;
+        document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + mode).classList.add('active');
+        
+        const d = descData[mode];
+        const descEl = document.getElementById('desc-content');
+        descEl.style.borderLeftColor = d.color;
+        descEl.innerHTML = `
+            <span class="tag" style="background:#21262d; color:${d.color};">${d.tag}</span>
+            <h2 style="color:${d.color};">${d.title}</h2>
+            <p>${d.text}</p>
+        `;
+        initPhotons();
+    }
+
+    function initPhotons() {
+        photons = [];
+        const ys = [80, 115, 150, 200, 235, 270]; // 6 jalur cahaya masuk
+        ys.forEach(y => {
+            // Setiap jalur memancarkan 3 warna: Merah, Hijau, Biru
+            photons.push({ x: 10, y: y, startY: y, stage: 0, speed: 4, color: '#ff7b72', type: 'red' });
+            photons.push({ x: 10, y: y, startY: y, stage: 0, speed: 4, color: '#2ecc71', type: 'green' });
+            photons.push({ x: 10, y: y, startY: y, stage: 0, speed: 4, color: '#38bdf8', type: 'blue' });
+        });
+    }
+
+    function drawOptics() {
+        // Garis Sumbu Tengah
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(0, 175); ctx.lineTo(850, 175); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 1. Gambar Lensa sesuai Mode
+        if (mode === 'singlet') {
+            // 1 Lensa Cembung biasa
+            ctx.fillStyle = "rgba(88, 166, 255, 0.25)";
+            ctx.strokeStyle = "#58a6ff"; ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(80, 175, 120, -0.8, 0.8, false);
+            ctx.arc(220, 175, 120, Math.PI - 0.8, Math.PI + 0.8, false);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif";
+            ctx.fillText("Lensa Tunggal", 110, 45);
+        }
+        else if (mode === 'achromat') {
+            // Doublet: Lensa Cembung (Crown) + Lensa Cekung (Flint)
+            ctx.fillStyle = "rgba(88, 166, 255, 0.25)";
+            ctx.strokeStyle = "#58a6ff"; ctx.lineWidth = 2;
+            ctx.beginPath(); // Crown (Depan)
+            ctx.arc(70, 175, 120, -0.8, 0.8, false);
+            ctx.arc(210, 175, 120, Math.PI - 0.8, Math.PI + 0.8, false);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            
+            ctx.fillStyle = "rgba(241, 196, 15, 0.25)";
+            ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 2;
+            ctx.beginPath(); // Flint (Belakang)
+            ctx.moveTo(170, 80); ctx.lineTo(190, 80);
+            ctx.arc(60, 175, 130, -0.8, 0.8, false);
+            ctx.lineTo(170, 270); ctx.closePath(); ctx.fill(); ctx.stroke();
+            
+            ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif";
+            ctx.fillText("Doublet (Crown + Flint)", 100, 45);
+        }
+        else if (mode === 'apochromat') {
+            // Triplet: Cembung + Cekung ED Glass + Cembung
+            ctx.fillStyle = "rgba(88, 166, 255, 0.2)";
+            ctx.strokeStyle = "#58a6ff"; ctx.lineWidth = 2;
+            ctx.beginPath(); // Lensa 1
+            ctx.arc(60, 175, 130, -0.8, 0.8, false);
+            ctx.arc(200, 175, 130, Math.PI - 0.8, Math.PI + 0.8, false);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "rgba(46, 204, 113, 0.35)";
+            ctx.strokeStyle = "#2ecc71"; ctx.lineWidth = 2;
+            ctx.beginPath(); // Lensa 2 (ED Glass Tengah)
+            ctx.fillRect(160, 80, 25, 190);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "rgba(88, 166, 255, 0.2)";
+            ctx.strokeStyle = "#58a6ff"; ctx.lineWidth = 2;
+            ctx.beginPath(); // Lensa 3
+            ctx.arc(110, 175, 130, -0.8, 0.8, false);
+            ctx.arc(250, 175, 130, Math.PI - 0.8, Math.PI + 0.8, false);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#2ecc71"; ctx.font = "bold 12px sans-serif";
+            ctx.fillText("Triplet ED / Fluorite Glass", 90, 45);
+        }
+
+        // 2. Gambar Garis Vertikal Penanda Titik Fokus
+        ctx.lineWidth = 2;
+        if (mode === 'singlet') {
+            // 3 Titik Fokus Terpisah
+            drawFocusMark(520, "Biru", "#38bdf8", -25);
+            drawFocusMark(580, "Hijau", "#2ecc71", 20);
+            drawFocusMark(640, "Merah", "#ff7b72", -25);
+        }
+        else if (mode === 'achromat') {
+            // Merah & Biru Menyatu di 600, Hijau di 560
+            drawFocusMark(560, "Hijau (Meleset)", "#2ecc71", -25);
+            drawFocusMark(620, "Merah & Biru Menyatu!", "#a5d6ff", 25);
+        }
+        else if (mode === 'apochromat') {
+            // KETIGANYA MENYATU SEMPURNA DI 600
+            drawFocusMark(600, "✨ SEMUA WARNA MENYATU SEMPURNA! ✨", "#fff", 30);
+            ctx.fillStyle = "#2ecc71";
+            ctx.beginPath(); ctx.arc(600, 175, 7, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+
+    function drawFocusMark(x, label, color, offsetY) {
+        ctx.strokeStyle = color; ctx.setLineDash([2, 2]);
+        ctx.beginPath(); ctx.moveTo(x, 100); ctx.lineTo(x, 250); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = color; ctx.font = "bold 11px sans-serif";
+        ctx.fillText(label, x - 30, 175 + offsetY);
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawOptics();
+
+        photons.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Tentukan target fokus X berdasarkan Mode dan Warna
+            let targetX = 600;
+            if (mode === 'singlet') {
+                if (p.type === 'blue') targetX = 520;
+                if (p.type === 'green') targetX = 580;
+                if (p.type === 'red') targetX = 640;
+            }
+            else if (mode === 'achromat') {
+                if (p.type === 'blue' || p.type === 'red') targetX = 620; // Menyatu!
+                if (p.type === 'green') targetX = 560; // Hijau sedikit meleset
+            }
+            else if (mode === 'apochromat') {
+                targetX = 600; // SEMUA MENYATU DI 600!
+            }
+
+            // --- LOGIKA GERAK ---
+            // Stage 0: Lurus menuju lensa (x=160)
+            if (p.stage === 0) {
+                p.x += p.speed * 2.5;
+                if (p.x >= 160) p.stage = 1;
+            }
+            // Stage 1: Dibengkokkan menuju titik fokus masing-masing
+            else if (p.stage === 1) {
+                p.x += p.speed * 2.5;
+                let slope = (175 - p.startY) / (targetX - 160);
+                p.y += slope * p.speed * 2.5;
+                if (p.x >= targetX) p.stage = 2;
+            }
+            // Stage 2: Menyilang terus ke kanan layar
+            else if (p.stage === 2) {
+                p.x += p.speed * 2.5;
+                let slope = (175 - p.startY) / (targetX - 160);
+                p.y += slope * p.speed * 2.5;
+                if (p.x >= 850) resetPhoton(p);
+            }
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    function resetPhoton(p) {
+        p.x = 10;
+        p.y = p.startY;
+        p.stage = 0;
+    }
+
+    setMode('singlet');
+    animate();
+</script>
+
+</body>
+</html>
